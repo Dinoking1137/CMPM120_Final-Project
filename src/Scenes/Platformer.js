@@ -412,6 +412,8 @@ class Platformer extends Phaser.Scene {
 
         this.physics.add.overlap(my.sprite.player, this.gravSpringGroup, (obj1, obj2) => {
 
+            console.log("GRAV SPRING OVERLAP WEEEWOOO WEEEHOOO");
+
             if(my.sprite.player.holdingSomething && my.sprite.player.grabbedObject == obj2) return;
 
             const SPRING_FORCE = 500;
@@ -431,7 +433,7 @@ class Platformer extends Phaser.Scene {
 
             let dot = dx * cos + dy * sin;
 
-            const THRESHOLD = obj2.height / 2;
+            const THRESHOLD = 0; // obj2.height / 4
             if (Math.abs(dot) < THRESHOLD) return;
             
             let dir = dot > 0 ? 1 : -1;
