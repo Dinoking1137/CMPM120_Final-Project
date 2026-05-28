@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="80" height="16" tilewidth="18" tileheight="18" infinite="1" nextlayerid="9" nextobjectid="318">
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="80" height="16" tilewidth="18" tileheight="18" infinite="1" nextlayerid="10" nextobjectid="322">
  <editorsettings>
   <export target="platformer-level-1.tmj" format="json"/>
  </editorsettings>
@@ -26,6 +26,9 @@
  </tileset>
  <tileset firstgid="113" name="pixelplat_tilemap" tilewidth="18" tileheight="18" tilecount="180" columns="20">
   <image source="pixel_tilemap_packed.png" width="360" height="162"/>
+ </tileset>
+ <tileset firstgid="293" name="final_tilemap" tilewidth="16" tileheight="16" tilecount="80" columns="8">
+  <image source="final_project_tilemap_packed.png" width="128" height="160"/>
  </tileset>
  <layer id="6" name="Parallax2" width="80" height="16">
   <data encoding="csv">
@@ -490,6 +493,12 @@
   <object id="315" name="super_spike" gid="182" x="1080" y="162" width="18" height="18" rotation="-90"/>
   <object id="316" name="spring" gid="220" x="1044" y="225" width="18" height="18" rotation="90"/>
   <object id="317" name="coin" gid="264" x="1053" y="153" width="18" height="18"/>
+  <object id="319" name="charge" gid="353" x="144" y="198" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="9" name="GravObjects">
+  <object id="318" name="shell" gid="361" x="108" y="216" width="16" height="16"/>
+  <object id="320" name="grav_spring" gid="341" x="18" y="216" width="16" height="16"/>
+  <object id="321" name="grav_spring" gid="341" x="78.3333" y="199.667" width="16" height="16" rotation="90"/>
  </objectgroup>
  <layer id="1" name="Ground" width="80" height="16">
   <data encoding="csv">

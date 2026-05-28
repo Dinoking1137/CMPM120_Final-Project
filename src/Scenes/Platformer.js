@@ -6,7 +6,7 @@ class Platformer extends Phaser.Scene {
     init(data) {
         // variables and settings
         //this.ACCELERATION = 400;
-        //this.DRAG = 1500;    // DRAG < ACCELERATION = icy slide
+        this.DRAG = 1000;    // DRAG < ACCELERATION = icy slide
         this.physics.world.gravity.y = 2000;
         this.physics.world.TILE_BIAS = 24;
         //this.JUMP_VELOCITY = -650;
@@ -70,14 +70,14 @@ class Platformer extends Phaser.Scene {
         // Second parameter: key for the tilesheet (from this.load.image in Load.js)
         this.pixel_tileset = this.map.addTilesetImage("pixelplat_tilemap", "pixel_tilemap_tiles");
         this.industry_tileset = this.map.addTilesetImage("industry_tilemap", "industry_tilemap_tiles");
+        this.final_tileset = this.map.addTilesetImage("final_tilemap", "final_tilemap_tiles");
 
         // Create a layer
-
-        this.parallax2Layer = this.map.createLayer("Parallax2", [this.pixel_tileset, this.industry_tileset], 0, 0);
-        this.parallax1Layer = this.map.createLayer("Parallax1", [this.pixel_tileset, this.industry_tileset], 0, 0);
-        this.bgLayer = this.map.createLayer("BackGround", [this.pixel_tileset, this.industry_tileset], 0, 0); //16 * this.TILE_SIZE
-        this.groundLayer = this.map.createLayer("Ground", [this.pixel_tileset, this.industry_tileset], 0, 0);
-        this.lavaLayer = this.map.createLayer("Lava", [this.pixel_tileset, this.industry_tileset], 0, 0);
+        this.parallax2Layer = this.map.createLayer("Parallax2", [this.pixel_tileset, this.industry_tileset, this.final_tileset], 0, 0);
+        this.parallax1Layer = this.map.createLayer("Parallax1", [this.pixel_tileset, this.industry_tileset, this.final_tileset], 0, 0);
+        this.bgLayer = this.map.createLayer("BackGround", [this.pixel_tileset, this.industry_tileset, this.final_tileset], 0, 0); //16 * this.TILE_SIZE
+        this.groundLayer = this.map.createLayer("Ground", [this.pixel_tileset, this.industry_tileset, this.final_tileset], 0, 0);
+        this.lavaLayer = this.map.createLayer("Lava", [this.pixel_tileset, this.industry_tileset, this.final_tileset], 0, 0);
 
         this.parallaxify(this.parallax2Layer, 0.25, 1.0, 16 * this.TILE_SIZE, 0, 0.75, 0.75);
         this.parallaxify(this.parallax1Layer, 0.5, 1.0, 16 * this.TILE_SIZE, 0, 0.875, 0.875);
@@ -121,8 +121,8 @@ class Platformer extends Phaser.Scene {
 
         this.superspikes = this.map.createFromObjects("Objects", {
             name: "super_spike",
-            key: "pixel_sheet",
-            frame: 69
+            key: "final_sheet",
+            frame: 1
         });
 
         this.superspikes.forEach(s => s.setDepth(2));
@@ -142,6 +142,36 @@ class Platformer extends Phaser.Scene {
         });
 
         this.powerUps.forEach(p => p.setDepth(2));
+
+        this.charges = this.map.createFromObjects("Objects", {
+            name: "charge",
+            key: "final_sheet",
+            frame: 60
+        });
+
+        this.charges.forEach(c => c.setDepth(2));
+
+        // Now we do physics based objects
+        // ===============================
+
+        this.shells = this.map.createFromObjects("GravObjects", {
+            name: "shell",
+            key: "final_sheet",
+            frame: 68
+        });
+
+        this.shells.forEach(s => {s.setDepth(0); s.isGravObject = true;});
+
+        this.gravSprings = this.map.createFromObjects("GravObjects", {
+            name: "grav_spring",
+            key: "final_sheet",
+            frame: 48
+        });
+
+        this.gravSprings.forEach(g => {g.setDepth(0); g.isGravObject = true;});
+        
+        // Create the animations for animated objects
+        // ==========================================
 
         // Create animation for coins created from Object layer
         this.anims.create({
@@ -174,9 +204,33 @@ class Platformer extends Phaser.Scene {
             repeat: 0      // Loop the animation indefinitely
         });
 
-        // Play the same animation for every memeber of the Object coins array
+        this.anims.create({
+            key: 'chargeAnim', // Animation key
+            frames: this.anims.generateFrameNumbers('final_sheet', 
+                {start: 60, end: 63}
+            ),
+            duration: 500,
+            //frameRate: 10,  // Higher is faster
+            repeat: -1      // Loop the animation indefinitely
+        });
+
+        // Create animations for physics based objects
+        // ===========================================
+
+        this.anims.create({
+            key: 'gravSpringAnim', // Animation key
+            frames: this.anims.generateFrameNumbers('final_sheet', {
+                frames: [48, 49, 50, 48]
+            }),
+            duration: 100,
+            //frameRate: 10,  // Higher is faster
+            repeat: 0      // Loop the animation indefinitely
+        });
+
+        // Play the same animation for every member of each group of animated objects
         this.anims.play('coinAnim', this.coins);
         this.anims.play('spawnAnim', this.spawns);
+        this.anims.play('chargeAnim', this.charges);
 
         this.physics.world.enable(this.coins, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.spawns, Phaser.Physics.Arcade.STATIC_BODY);
@@ -184,6 +238,22 @@ class Platformer extends Phaser.Scene {
         this.physics.world.enable(this.superspikes, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.powerUps, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.springs, Phaser.Physics.Arcade.STATIC_BODY);
+        this.physics.world.enable(this.charges, Phaser.Physics.Arcade.STATIC_BODY);
+
+        // Enable physics for physics based objects
+        // ========================================
+
+        this.physics.world.enable(this.shells, Phaser.Physics.Arcade.DYNAMIC_BODY);
+        this.physics.world.enable(this.gravSprings, Phaser.Physics.Arcade.DYNAMIC_BODY);
+
+        this.shells.forEach(s => {s.body.setBounce(1.0, 0.0);});
+        this.gravSprings.forEach(g => {g.body.setBounce(0.5, 0.0);});
+
+        this.physics.add.collider(this.shells, this.groundLayer);
+        this.physics.add.collider(this.gravSprings, this.groundLayer);
+
+        // Fix hitboxes for static objects
+        // ===============================
 
         this.spikes.forEach(spike => {
 
@@ -215,6 +285,9 @@ class Platformer extends Phaser.Scene {
             this.rotateHitbox(baseWidth, baseHeight, baseCenterX, baseCenterY, spring);
         });
 
+        // Fix hitboxes for physics based objects
+        // ======================================
+
         // Create a Phaser group out of the array this.coins
         // This will be used for collision detection below.
         this.coinGroup = this.add.group(this.coins);
@@ -223,6 +296,9 @@ class Platformer extends Phaser.Scene {
         this.superspikeGroup = this.add.group(this.superspikes);
         this.powerUpsGroup = this.add.group(this.powerUps);
         this.springGroup = this.add.group(this.springs);
+        this.chargeGroup = this.add.group(this.charges);
+        this.shellGroup = this.add.group(this.shells);
+        this.gravSpringGroup = this.add.group(this.gravSprings);
 
         this.spawn = this.spawnGroup.getChildren()[0]; // get the first spawn point (there's only one in this level)
         console.log(this.spawn);
@@ -238,17 +314,20 @@ class Platformer extends Phaser.Scene {
         this.cursors.jump = this.input.keyboard.addKey('SPACE');
         this.cursors.twirl = this.input.keyboard.addKey('PERIOD');
         this.cursors.dash = this.input.keyboard.addKey('COMMA');
+        this.cursors.grab = this.input.keyboard.addKey('E');
         this.cursors.spin = this.input.keyboard.addKey('L');
 
         this.rKey = this.input.keyboard.addKey('R');
 
-        this.prevPadState = { jump: false, twirl: false, dash: false, spin: false };
+        this.prevPadState = { jump: false, twirl: false, dash: false, grab: false, spin: false };
         this.padJumpJustPressed = false;
         this.padTwirlJustPressed = false;
         this.padDashJustPressed = false;
+        this.padGrabJustPressed = false;
         this.padSpinJustPressed = false;
 
         this.padJumpHeld = false;
+        this.padGrabHeld = false;
         this.padSpinHeld = false;
 
         // set up player avatar
@@ -331,6 +410,92 @@ class Platformer extends Phaser.Scene {
             //my.sprite.player.setVelocity(,0);
         });
 
+        this.physics.add.overlap(my.sprite.player, this.gravSpringGroup, (obj1, obj2) => {
+
+            if(my.sprite.player.holdingSomething && my.sprite.player.grabbedObject == obj2) return;
+
+            const SPRING_FORCE = 500;
+
+            let angle = Phaser.Math.DegToRad(obj2.angle - 90);
+
+            let cos = Math.cos(angle);
+            let sin = Math.sin(angle);
+
+            let springCenterX = obj2.body.x + obj2.width/2;
+            let springCenterY = obj2.body.y + obj2.height/2;
+            let playerCenterX = my.sprite.player.body.x + my.sprite.player.body.width/2;
+            let playerCenterY = my.sprite.player.body.y + my.sprite.player.body.height/2;
+
+            let dx = playerCenterX - springCenterX;
+            let dy = playerCenterY - springCenterY;
+
+            let dot = dx * cos + dy * sin;
+
+            const THRESHOLD = obj2.height / 2;
+            if (Math.abs(dot) < THRESHOLD) return;
+            
+            let dir = dot > 0 ? 1 : -1;
+
+            my.sprite.player.body.setVelocity(dir * cos * SPRING_FORCE, dir * sin * SPRING_FORCE);
+            my.sprite.player.isDash = true;
+            this.anims.play('gravSpringAnim', obj2);
+            if (dir > 0){
+                obj2.flipX = false;
+                obj2.flipY = false;
+            } else {
+                obj2.flipX = true;
+                obj2.flipY = true;
+            }
+        });
+
+        /*
+        const playerBottom = my.sprite.player.body.y + my.sprite.player.body.height;
+            const spikeTop = obj2.body.y;
+
+            const aboveSpike = playerBottom <= spikeTop + 4;
+
+            if(my.sprite.player.isSpin && aboveSpike){
+                my.sprite.player.body.velocity.y = my.sprite.player.JUMP_VELOCITY * my.sprite.player.SPIN_MULTIPLIER;
+            } else {
+                my.sprite.player.setPosition(this.start.x, this.start.y);
+                my.sprite.player.setVelocity(0,0);
+            }
+        */
+
+        this.physics.add.overlap(my.sprite.player, this.shellGroup, (obj1, obj2) => {
+
+            if(my.sprite.player.holdingSomething && my.sprite.player.grabbedObject == obj2) return;
+
+            let shellCenterX = obj2.body.x + obj2.width/2;
+            let playerCenterX = my.sprite.player.body.x + my.sprite.player.body.width/2;
+
+            let dx = playerCenterX - shellCenterX;
+
+            const COLLISION_THRESHOLD = obj2.height / 2;
+
+            const shellTop = obj2.body.y;
+            const playerBottom = my.sprite.player.body.y + my.sprite.player.body.height;
+            const aboveShell = playerBottom <= shellTop + COLLISION_THRESHOLD;
+            
+            const THROW_STRENGTH = 250;
+
+            if(obj2.body.blocked.down && obj2.body.velocity.x === 0) {
+                let dir = dx > 0 ? 1 : -1;
+                obj2.body.setVelocityX(dir * THROW_STRENGTH);
+                return;
+            }
+
+            if(aboveShell){
+                my.sprite.player.body.velocity.y = my.sprite.player.JUMP_VELOCITY;
+                let dir = dx > 0 ? 1 : -1;
+                obj2.body.setVelocityX(dir * THROW_STRENGTH);
+            } else {
+                my.sprite.player.setPosition(this.start.x, this.start.y);
+                my.sprite.player.setVelocity(0,0);
+                console.log("failed shell jump");
+            }
+        });
+
         // debug key listener (assigned to D key)
         this.input.keyboard.on('keydown-CTRL', () => {
             this.physics.world.drawDebug = !this.physics.world.drawDebug;
@@ -401,22 +566,56 @@ class Platformer extends Phaser.Scene {
         
             const jumpPressed = pad.buttons[0].pressed;
             const twirlPressed = pad.buttons[5].pressed;
-            const dashPressed = pad.buttons[2].pressed;
+            const dashPressed = pad.buttons[7].pressed; // 2
+            const grabPressed = pad.buttons[2].pressed;
             const spinPressed = pad.buttons[4].pressed; // 7
 
             this.padJumpJustPressed = jumpPressed && !this.prevPadState.jump;
             this.padTwirlJustPressed = twirlPressed && !this.prevPadState.twirl;
             this.padDashJustPressed = dashPressed && !this.prevPadState.dash;
+            this.padGrabJustPressed = grabPressed && !this.prevPadState.grab;
             this.padSpinJustPressed = spinPressed && !this.prevPadState.spin;
 
             this.padJumpHeld = jumpPressed;
+            this.padGrabHeld = grabPressed;
             this.padSpinHeld = spinPressed;
             
-            this.prevPadState = { jump: jumpPressed, twirl: twirlPressed, dash: dashPressed, spin: spinPressed};
+            this.prevPadState = { jump: jumpPressed, twirl: twirlPressed, dash: dashPressed, grab: grabPressed, spin: spinPressed};
         }
 
         const cam = this.cameras.main;
+
+        // Lock particles to camera
         this.vfx.bgParticles.setPosition(cam.scrollX + cam.width / 2, cam.scrollY + cam.height / 2);
+
+        /*
+        this.shells.forEach(shell => {
+            if (shell.active && shell.isGravObject){
+
+                const gravObjectMultConst = 1 * (2.0 / 4.0);
+
+                shell.body.setAccelerationY(this.physics.world.gravity.y * gravObjectMultConst);
+                shell.body.setDragX(0);
+
+                if (shell.body.blocked.left || shell.body.blocked.right) {
+                    //console.log(`Velocity before: ${shell.body.velocity.x}`);
+                    shell.body.setVelocityX(-shell.throwSpeed / 2);
+                    //console.log(`Velocity after: ${shell.body.velocity.x}`);
+                    console.log("SHELL BOUNCE");
+                }
+            }
+        }); */
+
+        this.gravSprings.forEach(gSpring => {
+            if (gSpring.active && gSpring.isGravObject){
+
+                const gravObjectMultConst = 1 * (2.0 / 4.0);
+
+                gSpring.body.setAccelerationY(this.physics.world.gravity.y * gravObjectMultConst);
+                gSpring.body.setAccelerationX(0);
+
+            }
+        });
 
         my.sprite.player.update(time, delta);
 

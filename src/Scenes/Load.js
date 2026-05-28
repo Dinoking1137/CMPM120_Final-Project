@@ -12,6 +12,7 @@ class Load extends Phaser.Scene {
         // Load tilemap information
         this.load.image("pixel_tilemap_tiles", "pixel_tilemap_packed.png");
         this.load.image("industry_tilemap_tiles", "industry_tilemap_packed.png");
+        this.load.image("final_tilemap_tiles", "final_project_tilemap_packed.png");
 
         this.load.spritesheet("pixel_sheet", "pixel_tilemap_packed.png", {
             frameWidth: 18,
@@ -21,6 +22,11 @@ class Load extends Phaser.Scene {
         this.load.spritesheet("industry_sheet", "industry_tilemap_packed.png", {
             frameWidth: 18,
             frameHeight: 18
+        });
+
+        this.load.spritesheet("final_sheet", "final_project_tilemap_packed.png", {
+            frameWidth: 16,
+            frameHeight: 16
         });
 
         this.load.tilemapTiledJSON("platformer-level-1", "platformer-level-1.tmj");   // Tilemap in JSON
