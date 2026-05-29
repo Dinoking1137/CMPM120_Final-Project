@@ -22,7 +22,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         //this.body.setOffset(5, 8);
 
         this.bodyW = this.width * (1/2);
-        this.bodyH = this.height * (3/8)
+        this.bodyH = this.height * (4/8)
         this.bodyOffX = this.bodyW / 2;
         this.bodyOffY = this.height - this.bodyH;
 
@@ -39,11 +39,16 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.isGrab = false;
         this.holdingSomething = false;
         this.grabbedObject = null;
+        this.isGrabInteractable = true;
 
         this.isSpin = true;
         this.SPIN_MULTIPLIER = 0.5;
+        this.SPIN_FLIP_INTERVAL = 50; // MS
+        this.spinFlipTimer = 0;
 
         this.isTwirl = true;
+        this.isTwirlAnimating = false;
+        this.isFlipLocked = false;
         this.TWIRL_MULTIPLIER = 0.35;
 
         this.upPressed = false;
@@ -59,7 +64,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.ACCELERATION = 400;
         this.DRAG = 1000;    // DRAG < ACCELERATION = icy slide
 
-        this.MAX_VELOCITY_X = 400;
+        this.MAX_VELOCITY_X = 250;
         this.MAX_VELOCITY_Y = 500;
         this.JUMP_VELOCITY = -500;
 
@@ -70,6 +75,10 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
         this.JUMP_BUFFER_TIME = 100;
         this.jumpBufferTimer = 0;
+
+        this.shellJumpWindow = false;
+        this.shellJumpTimer = 0;
+        this.SHELL_JUMP_WINDOW = 200; //ms after shell jump to press jump
     }
 
     update(time, delta) {
@@ -96,7 +105,9 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
         if (inputX !== 0) {
             this.setAccelerationX(inputX * this.ACCELERATION);
-            this.setFlip(inputX > 0, false);
+            if (!this.isFlipLocked) {
+                this.setFlip(inputX > 0, false);
+            }
             //console.log(`InputX: ${inputX}`);
             this.anims.play('walk', true);
         } else {
@@ -148,10 +159,21 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         // ======================
 
         if (twirlJustDown && this.isTwirl) {
-            console.log("IS TWIRLING");
             this.body.velocity.y = this.JUMP_VELOCITY * this.TWIRL_MULTIPLIER;
             this.isTwirl = false;
-            this.scene.time.delayedCall(250, () => {
+            this.isTwirlAnimating = true;
+            this.isFlipLocked = true;
+
+            const startFlip = this.flipX;
+            this.flipX = !startFlip;
+
+            this.scene.time.delayedCall(200, () => {
+                this.flipX = startFlip;
+                this.isFlipLocked = false;
+                this.isTwirlAnimating = false;
+            });
+
+            this.scene.time.delayedCall(200, () => {
                 this.isTwirl = true;
             });
         }
@@ -165,14 +187,27 @@ class Player extends Phaser.Physics.Arcade.Sprite {
             this.jumpBufferTimer = this.JUMP_BUFFER_TIME;
         }
 
+        if (this.shellJumpWindow) {
+            this.shellJumpTimer -= delta;
+
+            if (jumpJustDown) {
+                this.body.setVelocityY(this.JUMP_VELOCITY);
+                this.isJumping = true;
+                this.shellJumpWindow = false;
+            } else if (this.shellJumpTimer <= 0) {
+                this.shellJumpWindow = false;
+            }
+        }
+
         if (this.jumpBufferTimer > 0) {
             if (this.coyoteTimer < this.CAYOTE_TIME) {
                 this.body.setVelocityY(this.JUMP_VELOCITY);
                 this.coyoteTimer = this.CAYOTE_TIME; // Reset coyote timer
                 this.isJumping = true;
 
+            // Wall jump
             } else if (this.body.blocked.left || this.body.blocked.right) {
-                this.body.setVelocityX(this.body.blocked.left ? this.MAX_VELOCITY_X / 2 : -this.MAX_VELOCITY_X / 2);
+                this.body.setVelocityX(this.body.blocked.left ? this.MAX_VELOCITY_X * (3.0 / 4.0) : -this.MAX_VELOCITY_X * (3.0 / 4.0));
                 this.body.setVelocityY(this.JUMP_VELOCITY);
                 this.isJumping = true;
             }
@@ -232,7 +267,9 @@ class Player extends Phaser.Physics.Arcade.Sprite {
                 .filter(body => body.gameObject !== this && body.gameObject.isGravObject)
                 .map(body => body.gameObject);
             
-            if (grabbed.length > 0 && this.holdingSomething == false) {
+            const releaseStrength = 250;
+
+            if (grabbed.length > 0 && this.holdingSomething == false && Math.abs(grabbed[0].body.velocity.x) < releaseStrength / 2.0) {
                 this.holdingSomething = true;
                 this.grabbedObject = grabbed[0];
             }
@@ -258,14 +295,46 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
                 if (dy < -0.5) {
                     this.grabbedObject.body.setVelocity(dx * releaseStrength / 4, -releaseStrength * 3);
+                    this.grabbedObject.noGroundDrag = false;
+                } else if (dy > 0.5) {
+                    this.grabbedObject.body.setVelocity(dx * releaseStrength * (3.0 / 8.0), -releaseStrength/2);
+                    this.grabbedObject.noGroundDrag = false;
                 } else {
-                    this.grabbedObject.body.setVelocity(dx * releaseStrength, -releaseStrength/3);
+                    this.grabbedObject.body.setVelocity(dx * releaseStrength, -releaseStrength/2);
+                    
+                    // get scene instance of grabbedObject
+                    if (this.grabbedObject.name === "shell"){
+                        this.grabbedObject.noGroundDrag = true;
+                        this.grabbedObject.body.setDragX(0);
+                        //let sceneGrabbedObject = this.scene.physics.world.objects.find(obj => obj.gameObject === this.grabbedObject);
+                        //this.grabbedObject.isDraggable = false;
+                        //this.grabbedObject.body.setDragX(0);
+                    }
                 }
             }
 
             this.grabbedObject = null;
             this.holdingSomething = false;
+            this.isGrabInteractable = false;
 
+            this.scene.time.delayedCall(100, () => {
+                this.isGrabInteractable = true;
+            });
+        }
+        
+        // Handle spin flip
+        // ================
+
+        if (this.isSpin && !this.body.blocked.down) {
+            this.spinFlipTimer += delta;
+            this.isFlipLocked = true;
+            if (this.spinFlipTimer >= this.SPIN_FLIP_INTERVAL) {
+                this.spinFlipTimer = 0;
+                this.setFlipX(!this.flipX);
+            }
+        } else if (!this.isTwirlAnimating){
+            this.isFlipLocked = false;
+            this.spinFlipTimer = 0;
         }
     }
 }

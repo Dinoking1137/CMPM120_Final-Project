@@ -7,7 +7,7 @@ class Platformer extends Phaser.Scene {
         // variables and settings
         //this.ACCELERATION = 400;
         this.DRAG = 1000;    // DRAG < ACCELERATION = icy slide
-        this.physics.world.gravity.y = 2000;
+        this.physics.world.gravity.y = 1750; // 2000
         this.physics.world.TILE_BIAS = 24;
         //this.JUMP_VELOCITY = -650;
         this.PARTICLE_VELOCITY = 50;
@@ -63,7 +63,12 @@ class Platformer extends Phaser.Scene {
 
         // Create a new tilemap game object which uses 18x18 pixel tiles, and is
         // 45 tiles wide and 25 tiles tall.
-        this.map = this.add.tilemap("platformer-level-1", 18, 18, 80, 16);
+        //this.map = this.add.tilemap("platformer-level-1", 18, 18, 80, 16);
+
+        this.map = this.add.tilemap("test-platformer", 16, 16, 32, 16);
+        this.final_tileset = this.map.addTilesetImage("final_tilemap", "final_tilemap_tiles");
+
+        /*
 
         // Add a tileset to the map
         // First parameter: name we gave the tileset in Tiled
@@ -86,6 +91,12 @@ class Platformer extends Phaser.Scene {
 
         //this.parallax2Layer.setTint(0x444444);
         //this.parallax1Layer.setTint(0x888888);
+
+        */
+
+        this.bgLayer = this.map.createLayer("BackGround", [this.final_tileset], 0, 0); //16 * this.TILE_SIZE
+        this.groundLayer = this.map.createLayer("Ground", [this.final_tileset], 0, 0);
+        this.lavaLayer = this.map.createLayer("Lava", [this.final_tileset], 0, 0);
 
         // Make it collidable
         //this.groundLayer.setCollisionByProperty({
@@ -168,7 +179,7 @@ class Platformer extends Phaser.Scene {
             frame: 48
         });
 
-        this.gravSprings.forEach(g => {g.setDepth(0); g.isGravObject = true;});
+        this.gravSprings.forEach(g => {g.setDepth(0); g.isGravObject = true; });
         
         // Create the animations for animated objects
         // ==========================================
@@ -288,6 +299,16 @@ class Platformer extends Phaser.Scene {
         // Fix hitboxes for physics based objects
         // ======================================
 
+        this.shells.forEach(shell => {
+
+            const baseWidth = 16;
+            const baseHeight = 12;
+            const baseCenterX = 0;
+            const baseCenterY = (shell.height - (baseHeight)) / 2;
+
+            this.rotateHitbox(baseWidth, baseHeight, baseCenterX, baseCenterY, shell);
+        });
+
         // Create a Phaser group out of the array this.coins
         // This will be used for collision detection below.
         this.coinGroup = this.add.group(this.coins);
@@ -394,6 +415,15 @@ class Platformer extends Phaser.Scene {
             });
         });
 
+        this.physics.add.overlap(my.sprite.player, this.chargeGroup, (obj1, obj2) => {
+            if (obj2.body.visible === false) return;
+            my.sprite.player.isDash = true;
+            obj2.body.visible = false;
+            this.time.delayedCall(5000, () => {
+                obj2.body.visible = true;
+            });
+        });
+
         this.physics.add.overlap(my.sprite.player, this.springGroup, (obj1, obj2) => {
 
             const SPRING_FORCE = 500;
@@ -413,6 +443,7 @@ class Platformer extends Phaser.Scene {
         this.physics.add.overlap(my.sprite.player, this.gravSpringGroup, (obj1, obj2) => {
 
             console.log("GRAV SPRING OVERLAP WEEEWOOO WEEEHOOO");
+            if (my.sprite.player.isGrabInteractable == false) return;
 
             if(my.sprite.player.holdingSomething && my.sprite.player.grabbedObject == obj2) return;
 
@@ -433,7 +464,7 @@ class Platformer extends Phaser.Scene {
 
             let dot = dx * cos + dy * sin;
 
-            const THRESHOLD = 0; // obj2.height / 4
+            const THRESHOLD = obj2.height / 8; // obj2.height / 4
             if (Math.abs(dot) < THRESHOLD) return;
             
             let dir = dot > 0 ? 1 : -1;
@@ -466,6 +497,8 @@ class Platformer extends Phaser.Scene {
 
         this.physics.add.overlap(my.sprite.player, this.shellGroup, (obj1, obj2) => {
 
+            if (my.sprite.player.isGrabInteractable == false || obj2.cantCollide) return;
+
             if(my.sprite.player.holdingSomething && my.sprite.player.grabbedObject == obj2) return;
 
             let shellCenterX = obj2.body.x + obj2.width/2;
@@ -473,29 +506,43 @@ class Platformer extends Phaser.Scene {
 
             let dx = playerCenterX - shellCenterX;
 
-            const COLLISION_THRESHOLD = obj2.height / 2;
+            const COLLISION_THRESHOLD = obj2.height * (2.0 / 4.0); // obj2.height / 2
 
             const shellTop = obj2.body.y;
             const playerBottom = my.sprite.player.body.y + my.sprite.player.body.height;
             const aboveShell = playerBottom <= shellTop + COLLISION_THRESHOLD;
             
-            const THROW_STRENGTH = 250;
+            const THROW_STRENGTH = 250.0;
 
-            if(obj2.body.blocked.down && obj2.body.velocity.x === 0) {
-                let dir = dx > 0 ? 1 : -1;
+            /*if(obj2.body.blocked.down) {
+                if (obj2.body.velocity.x === 0) {
+                    let dir = dx > 0 ? 1 : -1;
+                    obj2.body.setVelocityX(dir * THROW_STRENGTH);
+                    return;
+                }
+            }*/
+
+            if(Math.abs(obj2.body.velocity.x) < THROW_STRENGTH / 2.0) {
+                let dir = dx < 0 ? 1 : -1;
                 obj2.body.setVelocityX(dir * THROW_STRENGTH);
-                return;
+                obj2.noGroundDrag = true;
+                obj2.body.setDragX(0);
             }
 
-            if(aboveShell){
-                my.sprite.player.body.velocity.y = my.sprite.player.JUMP_VELOCITY;
-                let dir = dx > 0 ? 1 : -1;
-                obj2.body.setVelocityX(dir * THROW_STRENGTH);
+            else if(aboveShell){
+                my.sprite.player.body.velocity.y = my.sprite.player.JUMP_VELOCITY * my.sprite.player.SPIN_MULTIPLIER;
+                obj2.body.setVelocityX(0);
+
+                my.sprite.player.shellJumpWindow = true;
+                my.sprite.player.shellJumpTimer = my.sprite.player.SHELL_JUMP_WINDOW;
             } else {
                 my.sprite.player.setPosition(this.start.x, this.start.y);
                 my.sprite.player.setVelocity(0,0);
                 console.log("failed shell jump");
             }
+
+            obj2.cantCollide = true;
+            this.time.delayedCall(100, () => { obj2.cantCollide = false; });
         });
 
         // debug key listener (assigned to D key)
@@ -608,7 +655,7 @@ class Platformer extends Phaser.Scene {
             }
         }); */
 
-        this.gravSprings.forEach(gSpring => {
+        /*this.gravSprings.forEach(gSpring => {
             if (gSpring.active && gSpring.isGravObject){
 
                 const gravObjectMultConst = 1 * (2.0 / 4.0);
@@ -616,6 +663,23 @@ class Platformer extends Phaser.Scene {
                 gSpring.body.setAccelerationY(this.physics.world.gravity.y * gravObjectMultConst);
                 gSpring.body.setAccelerationX(0);
 
+            }
+        }); */
+
+        this.shells.forEach(shell => {
+            if (shell.body.blocked.down && !shell.noGroundDrag) {
+                shell.body.setDragX(this.DRAG);
+                console.log("SHELL DRAG");
+            } else {
+                shell.body.setDragX(0);
+            }
+        });
+        this.gravSprings.forEach(gSpring => {
+            if (gSpring.body.blocked.down) {
+                gSpring.body.setDragX(this.DRAG);
+                console.log("GRAV SPRING DRAG");
+            } else {
+                gSpring.body.setDragX(0);
             }
         });
 
