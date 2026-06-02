@@ -432,11 +432,11 @@
          "id":3,
          "name":"BackGround",
          "opacity":1,
-         "startx":0,
+         "startx":16,
          "starty":0,
          "type":"tilelayer",
          "visible":true,
-         "width":48,
+         "width":32,
          "x":0,
          "y":0
         }, 
@@ -2417,7 +2417,7 @@
         {
          "columns":16,
          "firstgid":1,
-         "image":"..\/..\/..\/..\/..\/Downloads\/PlatformerKennyAssets\/Industry\/Tilemap\/tilemap_packed.png",
+         "image":"industry_tilemap_packed.png",
          "imageheight":126,
          "imagewidth":288,
          "margin":0,
