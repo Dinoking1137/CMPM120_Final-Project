@@ -335,7 +335,7 @@ class Platformer extends Phaser.Scene {
         this.cursors.jump = this.input.keyboard.addKey('SPACE');
         this.cursors.twirl = this.input.keyboard.addKey('PERIOD');
         this.cursors.dash = this.input.keyboard.addKey('COMMA');
-        this.cursors.grab = this.input.keyboard.addKey('E');
+        this.cursors.grab = this.input.keyboard.addKey('K');
         this.cursors.spin = this.input.keyboard.addKey('L');
 
         this.rKey = this.input.keyboard.addKey('R');
