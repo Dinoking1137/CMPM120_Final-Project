@@ -4,7 +4,7 @@
   <export target="platformer-level-1.tmj" format="json"/>
  </editorsettings>
  <tileset firstgid="1" name="industry_tilemap" tilewidth="18" tileheight="18" tilecount="112" columns="16">
-  <image source="../../../../../Downloads/PlatformerKennyAssets/Industry/Tilemap/tilemap_packed.png" width="288" height="126"/>
+  <image source="industry_tilemap_packed.png" width="288" height="126"/>
   <tile id="13">
    <animation>
     <frame tileid="13" duration="200"/>
