@@ -463,19 +463,19 @@
                 {
                  "animation":[
                         {
-                         "duration":50,
+                         "duration":200,
                          "tileid":76
                         }, 
                         {
-                         "duration":50,
+                         "duration":200,
                          "tileid":77
                         }, 
                         {
-                         "duration":50,
+                         "duration":200,
                          "tileid":78
                         }, 
                         {
-                         "duration":50,
+                         "duration":200,
                          "tileid":79
                         }],
                  "id":76
