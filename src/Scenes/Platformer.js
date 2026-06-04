@@ -322,7 +322,7 @@ class Platformer extends Phaser.Scene {
         this.gravSpringGroup = this.add.group(this.gravSprings);
 
         this.spawn = this.spawnGroup.getChildren()[0]; // get the first spawn point (there's only one in this level)
-        console.log(this.spawn);
+        //console.log(this.spawn);
         this.start = {x: this.spawn.x, y: this.spawn.y};
 
         // set up Phaser-provided cursor key input
@@ -442,7 +442,7 @@ class Platformer extends Phaser.Scene {
 
         this.physics.add.overlap(my.sprite.player, this.gravSpringGroup, (obj1, obj2) => {
 
-            console.log("GRAV SPRING OVERLAP WEEEWOOO WEEEHOOO");
+            //console.log("GRAV SPRING OVERLAP WEEEWOOO WEEEHOOO");
             if (my.sprite.player.isGrabInteractable == false) return;
 
             if(my.sprite.player.holdingSomething && my.sprite.player.grabbedObject == obj2) return;
@@ -538,7 +538,7 @@ class Platformer extends Phaser.Scene {
             } else {
                 my.sprite.player.setPosition(this.start.x, this.start.y);
                 my.sprite.player.setVelocity(0,0);
-                console.log("failed shell jump");
+                //console.log("failed shell jump");
             }
 
             obj2.cantCollide = true;
@@ -669,7 +669,7 @@ class Platformer extends Phaser.Scene {
         this.shells.forEach(shell => {
             if (shell.body.blocked.down && !shell.noGroundDrag) {
                 shell.body.setDragX(this.DRAG);
-                console.log("SHELL DRAG");
+                //console.log("SHELL DRAG");
             } else {
                 shell.body.setDragX(0);
             }
@@ -677,7 +677,7 @@ class Platformer extends Phaser.Scene {
         this.gravSprings.forEach(gSpring => {
             if (gSpring.body.blocked.down) {
                 gSpring.body.setDragX(this.DRAG);
-                console.log("GRAV SPRING DRAG");
+                //console.log("GRAV SPRING DRAG");
             } else {
                 gSpring.body.setDragX(0);
             }

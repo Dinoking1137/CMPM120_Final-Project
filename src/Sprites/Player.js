@@ -90,7 +90,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.isGrab = this.cursors.grab.isDown || this.scene.padGrabHeld;
         this.isSpin = this.cursors.spin.isDown || this.scene.padSpinHeld;
 
-        if (this.isSpin) console.log("IS SPIN");
+        //if (this.isSpin) console.log("IS SPIN");
 
         // Check Horizontal Movement
         // =========================
@@ -231,7 +231,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
         if (dashJustDown && this.isDash){
 
-            console.log("IS DASHING");
+            //console.log("IS DASHING");
             let dx = inputX;
             let dy = inputY;
             
@@ -256,7 +256,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         // =======
 
         if (this.isGrab && !this.holdingSomething){
-            console.log("IS GRABBING");
+            //console.log("IS GRABBING");
 
             const grabOffsetX = this.flipX ? -this.body.width / 2 : this.body.width / 2;
             const grabX = this.x + grabOffsetX;
