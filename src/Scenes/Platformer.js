@@ -1,6 +1,8 @@
 class Platformer extends Phaser.Scene {
     constructor() {
         super("platformerScene");
+
+        this.glowingGravObjs = [];
     }
 
     init(data) {
@@ -171,7 +173,7 @@ class Platformer extends Phaser.Scene {
             frame: 68
         });
 
-        this.shells.forEach(s => {s.setDepth(0); s.isGravObject = true;});
+        this.shells.forEach(s => {s.setDepth(0); s.isGravObject = true; s.enableFilters(); });
 
         this.gravSprings = this.map.createFromObjects("GravObjects", {
             name: "grav_spring",
@@ -179,7 +181,7 @@ class Platformer extends Phaser.Scene {
             frame: 48
         });
 
-        this.gravSprings.forEach(g => {g.setDepth(0); g.isGravObject = true; });
+        this.gravSprings.forEach(g => {g.setDepth(0); g.isGravObject = true; g.enableFilters(); });
         
         // Create the animations for animated objects
         // ==========================================
@@ -441,8 +443,8 @@ class Platformer extends Phaser.Scene {
         });
 
         this.physics.add.overlap(my.sprite.player, this.gravSpringGroup, (obj1, obj2) => {
-
             //console.log("GRAV SPRING OVERLAP WEEEWOOO WEEEHOOO");
+
             if (my.sprite.player.isGrabInteractable == false) return;
 
             if(my.sprite.player.holdingSomething && my.sprite.player.grabbedObject == obj2) return;
@@ -716,5 +718,53 @@ class Platformer extends Phaser.Scene {
         layer.setScrollFactor(ratioX, ratioY);
         layer.setScale(scaleX, scaleY);
         layer.setPosition(positionX, positionY);
+    }
+
+    checkForNearbyGravObjects() { 
+        const player = my.sprite.player; //aliasing
+
+        const grabOffsetX = player.flipX ? -player.body.width / 2 : player.body.width / 2;
+        const grabX = player.x + grabOffsetX;
+        const grabY = player.y;
+        const grabRadius = 20;
+
+        const nearbyGravObjects = this.physics.overlapCirc(grabX, grabY, grabRadius, true, true)
+                .filter(body => body.gameObject !== player && body.gameObject.isGravObject)
+                .map(body => body.gameObject);
+        
+        if (nearbyGravObjects.length > 0 
+                && !player.isGrab && !player.holdingSomething) {
+            //Highlighting
+            //=========
+
+            //prune list of stuff not nearby
+            let removable = this.glowingGravObjs.filter(item => !nearbyGravObjects.includes(item));
+            for (const obj of removable) {
+                obj.filters.internal.remove(obj.fx);
+            }
+            this.glowingGravObjs = this.glowingGravObjs.filter(item => nearbyGravObjects.includes(item));
+
+            for (let gravObj of nearbyGravObjects) {
+                //if it can be picked up
+                if (Math.abs(gravObj.body.velocity.x) < player.releaseStrength / 2.0) {
+                    //if it doesn't already glow
+                    if (!this.glowingGravObjs.includes(gravObj)) {
+                        gravObj.fx = gravObj.filters.internal.addGlow();
+                        gravObj.fx.setPaddingOverride(null);
+
+                        this.glowingGravObjs.push(gravObj);
+                    }
+                }
+            } 
+        }
+        else if (this.glowingGravObjs.length > 0) {
+            for (let obj of this.glowingGravObjs) {
+                obj.filters.internal.remove(obj.fx);
+            }
+
+            this.glowingGravObjs = []
+        }
+
+        return nearbyGravObjects[0];
     }
 }

@@ -79,6 +79,9 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         this.shellJumpWindow = false;
         this.shellJumpTimer = 0;
         this.SHELL_JUMP_WINDOW = 200; //ms after shell jump to press jump
+
+        
+        this.releaseStrength = 250;
     }
 
     update(time, delta) {
@@ -255,23 +258,15 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         // Do Grab
         // =======
 
-        if (this.isGrab && !this.holdingSomething){
+        //find nearest gravObject, also this func needs to run to keep up the glow functionality, spaghetti?
+        const nearestGravObj = this.scene.checkForNearbyGravObjects();
+
+        if (this.isGrab && !this.holdingSomething && nearestGravObj != null){
             //console.log("IS GRABBING");
 
-            const grabOffsetX = this.flipX ? -this.body.width / 2 : this.body.width / 2;
-            const grabX = this.x + grabOffsetX;
-            const grabY = this.y;
-            const grabRadius = 20;
-
-            const grabbed = this.scene.physics.overlapCirc(grabX, grabY, grabRadius, true, true)
-                .filter(body => body.gameObject !== this && body.gameObject.isGravObject)
-                .map(body => body.gameObject);
-            
-            const releaseStrength = 250;
-
-            if (grabbed.length > 0 && this.holdingSomething == false && Math.abs(grabbed[0].body.velocity.x) < releaseStrength / 2.0) {
+            if (Math.abs(nearestGravObj.body.velocity.x) < this.releaseStrength / 2.0) {
                 this.holdingSomething = true;
-                this.grabbedObject = grabbed[0];
+                this.grabbedObject = nearestGravObj;
             }
         }
 
@@ -288,19 +283,17 @@ class Player extends Phaser.Physics.Arcade.Sprite {
                 
                 let dx = inputX;
                 let dy = inputY;
-
-                const releaseStrength = 250;
                 
                 dx = dx === 0 ? (this.flipX ? 1 : -1) : dx;
 
                 if (dy < -0.5) {
-                    this.grabbedObject.body.setVelocity(dx * releaseStrength / 4, -releaseStrength * 3);
+                    this.grabbedObject.body.setVelocity(dx * this.releaseStrength / 4, -this.releaseStrength * 3);
                     this.grabbedObject.noGroundDrag = false;
                 } else if (dy > 0.5) {
-                    this.grabbedObject.body.setVelocity(dx * releaseStrength * (3.0 / 8.0), -releaseStrength/2);
+                    this.grabbedObject.body.setVelocity(dx * this.releaseStrength * (3.0 / 8.0), -this.releaseStrength/2);
                     this.grabbedObject.noGroundDrag = false;
                 } else {
-                    this.grabbedObject.body.setVelocity(dx * releaseStrength, -releaseStrength/2);
+                    this.grabbedObject.body.setVelocity(dx * this.releaseStrength, -this.releaseStrength/2);
                     
                     // get scene instance of grabbedObject
                     if (this.grabbedObject.name === "shell"){
