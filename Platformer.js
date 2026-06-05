@@ -10,10 +10,7 @@ class Platformer extends Phaser.Scene {
         this.PARTICLE_VELOCITY = 50;
         this.SCALE = 4.0;
         this.TILE_SIZE = 18;
-
         this.canDie = true;
-        this.isDying = false;
-        this.controlsOpen = false;
     }
 
     createParticles() {
@@ -262,6 +259,7 @@ class Platformer extends Phaser.Scene {
         this.gravSpringGroup = this.add.group(this.gravSprings);
 
         this.spawn = this.spawnGroup.getChildren()[0];
+        console.log(this.spawn);
         this.start = {
             x: this.spawn.x,
             y: this.spawn.y
@@ -299,21 +297,14 @@ class Platformer extends Phaser.Scene {
         this.padGrabHeld = false;
         this.padSpinHeld = false;
 
-        my.sprite.player = new Player(
-            this,
-            this.start.x,
-            this.start.y,
-            "platformer_characters",
-            "tile_0000.png",
-            this.cursors
-        );
-
+        my.sprite.player = new Player(this, this.start.x, this.start.y, "platformer_characters", "tile_0000.png", this.cursors);
         my.sprite.player.setDepth(1);
 
         this.physics.add.collider(my.sprite.player, this.groundLayer);
 
+        // LAVA DEATH WITH FADE
         this.physics.add.overlap(my.sprite.player, this.lavaLayer, (obj1, obj2) => {
-            this.playerDeath();
+            this.deathFadeRespawn();
         }, (obj1, obj2) => {
             return obj2.index !== -1;
         });
@@ -330,30 +321,32 @@ class Platformer extends Phaser.Scene {
             };
         });
 
+        // SPIKE DEATH WITH FADE
         this.physics.add.overlap(my.sprite.player, this.spikeGroup, (obj1, obj2) => {
             if (!this.canDie) return;
 
             const playerBottom = my.sprite.player.body.y + my.sprite.player.body.height;
             const spikeTop = obj2.body.y;
+
             const aboveSpike = playerBottom <= spikeTop + 4;
 
             if (my.sprite.player.isSpin && aboveSpike) {
-                my.sprite.player.body.velocity.y =
-                    my.sprite.player.JUMP_VELOCITY * my.sprite.player.SPIN_MULTIPLIER;
+                my.sprite.player.body.velocity.y = my.sprite.player.JUMP_VELOCITY * my.sprite.player.SPIN_MULTIPLIER;
             } else {
-                this.playerDeath();
+                this.deathFadeRespawn();
             }
         });
 
+        // SUPER SPIKE DEATH WITH FADE
         this.physics.add.overlap(my.sprite.player, this.superspikeGroup, (obj1, obj2) => {
-            this.playerDeath();
+            this.deathFadeRespawn();
         });
 
         this.physics.add.overlap(my.sprite.player, this.powerUpsGroup, (obj1, obj2) => {
             obj2.destroy();
             this.isPoweredUp = true;
 
-            this.tweens.add({
+            let powerUpTween = this.tweens.add({
                 targets: my.sprite.player,
                 onComplete: () => {
                     this.isPoweredUp = false;
@@ -376,6 +369,7 @@ class Platformer extends Phaser.Scene {
             const SPRING_FORCE = 500;
 
             let angle = Phaser.Math.DegToRad(obj2.angle - 90);
+
             let cos = Math.cos(angle);
             let sin = Math.sin(angle);
 
@@ -386,12 +380,15 @@ class Platformer extends Phaser.Scene {
         });
 
         this.physics.add.overlap(my.sprite.player, this.gravSpringGroup, (obj1, obj2) => {
+            console.log("GRAV SPRING OVERLAP WEEEWOOO WEEEHOOO");
+
             if (my.sprite.player.isGrabInteractable == false) return;
             if (my.sprite.player.holdingSomething && my.sprite.player.grabbedObject == obj2) return;
 
             const SPRING_FORCE = 500;
 
             let angle = Phaser.Math.DegToRad(obj2.angle - 90);
+
             let cos = Math.cos(angle);
             let sin = Math.sin(angle);
 
@@ -410,12 +407,9 @@ class Platformer extends Phaser.Scene {
 
             let dir = dot > 0 ? 1 : -1;
 
-            my.sprite.player.body.setVelocity(
-                dir * cos * SPRING_FORCE,
-                dir * sin * SPRING_FORCE
-            );
-
+            my.sprite.player.body.setVelocity(dir * cos * SPRING_FORCE, dir * sin * SPRING_FORCE);
             my.sprite.player.isDash = true;
+
             this.anims.play('gravSpringAnim', obj2);
 
             if (dir > 0) {
@@ -433,6 +427,7 @@ class Platformer extends Phaser.Scene {
 
             let shellCenterX = obj2.body.x + obj2.width / 2;
             let playerCenterX = my.sprite.player.body.x + my.sprite.player.body.width / 2;
+
             let dx = playerCenterX - shellCenterX;
 
             const COLLISION_THRESHOLD = obj2.height * (2.0 / 4.0);
@@ -448,16 +443,16 @@ class Platformer extends Phaser.Scene {
                 obj2.body.setVelocityX(dir * THROW_STRENGTH);
                 obj2.noGroundDrag = true;
                 obj2.body.setDragX(0);
-            } else if (aboveShell) {
-                my.sprite.player.body.velocity.y =
-                    my.sprite.player.JUMP_VELOCITY * my.sprite.player.SPIN_MULTIPLIER;
 
+            } else if (aboveShell) {
+                my.sprite.player.body.velocity.y = my.sprite.player.JUMP_VELOCITY * my.sprite.player.SPIN_MULTIPLIER;
                 obj2.body.setVelocityX(0);
 
                 my.sprite.player.shellJumpWindow = true;
                 my.sprite.player.shellJumpTimer = my.sprite.player.SHELL_JUMP_WINDOW;
+
             } else {
-                this.playerDeath();
+                this.deathFadeRespawn();
                 console.log("failed shell jump");
             }
 
@@ -485,8 +480,6 @@ class Platformer extends Phaser.Scene {
         this.cameras.main.setDeadzone(50, 50);
         this.cameras.main.setZoom(this.SCALE);
 
-        this.createControlsMenu();
-
         const cam = this.cameras.main;
         const camW = cam.width / cam.zoom;
         const camH = cam.height / cam.zoom;
@@ -500,16 +493,7 @@ class Platformer extends Phaser.Scene {
             layerData.data.forEach(row => {
                 row.forEach((tile, i) => {
                     if (tile === null) {
-                        row[i] = new Phaser.Tilemaps.Tile(
-                            layerData,
-                            -1,
-                            0,
-                            0,
-                            this.map.tileWidth,
-                            this.map.tileHeight,
-                            this.map.tileWidth,
-                            this.map.tileHeight
-                        );
+                        row[i] = new Phaser.Tilemaps.Tile(layerData, -1, 0, 0, this.map.tileWidth, this.map.tileHeight, this.map.tileWidth, this.map.tileHeight);
                     }
                 });
             });
@@ -558,14 +542,12 @@ class Platformer extends Phaser.Scene {
 
         const cam = this.cameras.main;
 
-        this.vfx.bgParticles.setPosition(
-            cam.scrollX + cam.width / 2,
-            cam.scrollY + cam.height / 2
-        );
+        this.vfx.bgParticles.setPosition(cam.scrollX + cam.width / 2, cam.scrollY + cam.height / 2);
 
         this.shells.forEach(shell => {
             if (shell.body.blocked.down && !shell.noGroundDrag) {
                 shell.body.setDragX(this.DRAG);
+                console.log("SHELL DRAG");
             } else {
                 shell.body.setDragX(0);
             }
@@ -574,28 +556,25 @@ class Platformer extends Phaser.Scene {
         this.gravSprings.forEach(gSpring => {
             if (gSpring.body.blocked.down) {
                 gSpring.body.setDragX(this.DRAG);
+                console.log("GRAV SPRING DRAG");
             } else {
                 gSpring.body.setDragX(0);
             }
         });
 
-        if (!this.controlsOpen && !this.isDying) {
-            my.sprite.player.update(time, delta);
-        }
+        my.sprite.player.update(time, delta);
 
         if (Phaser.Input.Keyboard.JustDown(this.rKey)) {
             this.scene.restart();
         }
     }
 
-    playerDeath() {
-        if (!this.canDie || this.isDying) return;
+    deathFadeRespawn() {
+        if (!this.canDie) return;
 
         this.canDie = false;
-        this.isDying = true;
-
+        my.sprite.player.isRespawning = true;
         my.sprite.player.setVelocity(0, 0);
-        this.physics.pause();
 
         this.cameras.main.fadeOut(300, 0, 0, 0);
 
@@ -605,84 +584,11 @@ class Platformer extends Phaser.Scene {
 
             this.cameras.main.fadeIn(300, 0, 0, 0);
 
-            this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
-                this.physics.resume();
+            this.time.delayedCall(600, () => {
                 this.canDie = true;
-                this.isDying = false;
+                my.sprite.player.isRespawning = false;
             });
         });
-    }
-
-    createControlsMenu() {
-        this.controlsButton = this.add.text(10, 10, "Controls", {
-            fontFamily: "monospace",
-            fontSize: "8px",
-            color: "#ffffff",
-            backgroundColor: "#000000",
-            padding: {
-                x: 4,
-                y: 2
-            }
-        });
-
-        this.controlsButton.setScrollFactor(0);
-        this.controlsButton.setDepth(1000);
-        this.controlsButton.setInteractive({
-            useHandCursor: true
-        });
-
-        this.controlsButton.on("pointerdown", () => {
-            if (this.isDying) return;
-            this.toggleControlsMenu();
-        });
-
-        this.controlsPanel = this.add.rectangle(80, 58, 145, 96, 0x000000, 0.85);
-        this.controlsPanel.setScrollFactor(0);
-        this.controlsPanel.setDepth(1001);
-        this.controlsPanel.setVisible(false);
-
-        this.controlsText = this.add.text(
-            15,
-            18,
-            "CONTROLS\n\n" +
-            "A / D: Move\n" +
-            "SPACE: Jump\n" +
-            ", : Dash\n" +
-            ". : Twirl\n" +
-            "E: Grab / Throw\n" +
-            "L: Spin\n" +
-            "R: Restart\n\n" +
-            "MECHANICS\n" +
-            "Spin onto spikes to bounce.\n" +
-            "Grab objects with E.\n" +
-            "Dash after collecting charges.\n\n" +
-            "Click Controls to close",
-            {
-                fontFamily: "monospace",
-                fontSize: "7px",
-                color: "#ffffff",
-                wordWrap: {
-                    width: 130
-                }
-            }
-        );
-
-        this.controlsText.setScrollFactor(0);
-        this.controlsText.setDepth(1002);
-        this.controlsText.setVisible(false);
-    }
-
-    toggleControlsMenu() {
-        this.controlsOpen = !this.controlsOpen;
-
-        this.controlsPanel.setVisible(this.controlsOpen);
-        this.controlsText.setVisible(this.controlsOpen);
-
-        if (this.controlsOpen) {
-            this.physics.pause();
-        } else {
-            this.physics.resume();
-        }
     }
 
     rotateHitbox(baseWidth, baseHeight, baseCenterX, baseCenterY, object) {
