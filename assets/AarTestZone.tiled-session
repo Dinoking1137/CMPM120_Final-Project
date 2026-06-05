@@ -3,28 +3,68 @@
     "expandedProjectPaths": [
         "."
     ],
+    "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
         "": {
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
-        "test-platformer.tmx": {
-            "scale": 3,
-            "selectedLayer": 2,
+        "#final": {
+            "scaleInDock": 1
+        },
+        "platformer-level-1.tmx": {
+            "scale": 1.0694097222222223,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 171.66666666666669,
-                "y": 212.33333333333331
+                "x": 720.0233773823825,
+                "y": 287.5418033053021
+            }
+        },
+        "platformer-level-1.tmx#final_tilemap": {
+            "scaleInDock": 1
+        },
+        "platformer-level-1.tmx#industry_tilemap": {
+            "scaleInDock": 1
+        },
+        "platformer-level-1.tmx#pixelplat_tilemap": {
+            "scaleInDock": 1
+        },
+        "test-platformer.tmx": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.5,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 247.66666666666663,
+                "y": 119.66666666666663
             }
         },
         "test-platformer.tmx#final_tilemap": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "tutorial.tmj": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.5,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 1240.3333333333333,
+                "y": 240.33333333333337
+            }
+        },
+        "tutorial.tmj#final": {
             "scaleInDock": 1
         }
     },
     "frame.defaultDuration": 200,
-    "last.exportedFilePath": "C:/Users/athek/OneDrive/Documents/GitHub/CMPM120_Final-Project/assets",
-    "last.imagePath": "C:/Users/athek/OneDrive/Documents/GitHub/CMPM120_Final-Project/assets",
+    "last.exportedFilePath": "C:/Users/Student/Documents/GitHub/CMPM120_Final-Project/assets",
+    "last.imagePath": "C:/Users/Student/Documents/GitHub/CMPM120_Final-Project/assets",
     "map.fixedSize": false,
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
-    "map.lastUsedFormat": "tmx",
+    "map.lastUsedFormat": "json",
     "map.tileHeight": 16,
     "map.tileWidth": 16,
     "openFiles": [
@@ -32,6 +72,7 @@
     ],
     "project": "AarTestZone.tiled-project",
     "recentFiles": [
+        "platformer-level-1.tmx",
         "test-platformer.tmx"
     ],
     "resizeMap.removeObjects": false,

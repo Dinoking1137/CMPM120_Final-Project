@@ -53,12 +53,12 @@ class Platformer extends Phaser.Scene {
     create() {
         this.createParticles();
 
-        this.map = this.add.tilemap("test-platformer", 16, 16, 32, 16);
-        this.final_tileset = this.map.addTilesetImage("final_tilemap", "final_tilemap_tiles");
+        this.map = this.add.tilemap("tutorial", 16, 16, 32, 16);
+        this.final_tileset = this.map.addTilesetImage("final", "final_tilemap_tiles");
 
-        this.bgLayer = this.map.createLayer("BackGround", [this.final_tileset], 0, 0);
+        //this.bgLayer = this.map.createLayer("BackGround", [this.final_tileset], 0, 0);
         this.groundLayer = this.map.createLayer("Ground", [this.final_tileset], 0, 0);
-        this.lavaLayer = this.map.createLayer("Lava", [this.final_tileset], 0, 0);
+        // this.lavaLayer = this.map.createLayer("Lava", [this.final_tileset], 0, 0);
 
         this.groundLayer.setCollisionByExclusion([-1]);
 
@@ -269,6 +269,7 @@ class Platformer extends Phaser.Scene {
             x: this.spawn.x,
             y: this.spawn.y
         };
+        console.log(this.spawn.x + ", " + this.spawn.y);
 
         this.cursors = {};
         this.cursors.left = this.input.keyboard.addKey('A');
@@ -376,7 +377,7 @@ class Platformer extends Phaser.Scene {
         });
 
         this.physics.add.overlap(my.sprite.player, this.springGroup, (obj1, obj2) => {
-            const SPRING_FORCE = 500;
+            const SPRING_FORCE = 800;
 
             let angle = Phaser.Math.DegToRad(obj2.angle - 90);
 
@@ -384,7 +385,7 @@ class Platformer extends Phaser.Scene {
             let sin = Math.sin(angle);
 
             my.sprite.player.body.setVelocity(cos * SPRING_FORCE, sin * SPRING_FORCE);
-            my.sprite.player.isDash = true;
+            //my.sprite.player.isDash = true;
 
             this.anims.play('springAnim', obj2);
         });
@@ -418,7 +419,7 @@ class Platformer extends Phaser.Scene {
             let dir = dot > 0 ? 1 : -1;
 
             my.sprite.player.body.setVelocity(dir * cos * SPRING_FORCE, dir * sin * SPRING_FORCE);
-            my.sprite.player.isDash = true;
+            //my.sprite.player.isDash = true;
 
             this.anims.play('gravSpringAnim', obj2);
 
@@ -485,7 +486,7 @@ class Platformer extends Phaser.Scene {
             }
         }, this);
 
-        this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
+        //this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
         this.cameras.main.startFollow(my.sprite.player, true, 0.25, 0.25);
         this.cameras.main.setDeadzone(50, 50);
         this.cameras.main.setZoom(this.SCALE);
