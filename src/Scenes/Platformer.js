@@ -1,30 +1,31 @@
 class Platformer extends Phaser.Scene {
     checkForNearbyGravObjects(player) {
-    if (!this.gravObjects) {
-        return null;
-    }
-
-    let nearbyObject = null;
-
-    this.gravObjects.children.iterate((object) => {
-        if (!object) {
-            return;
+        if (!this.gravObjects) {
+            return null;
         }
 
-        const distance = Phaser.Math.Distance.Between(
-            player.x,
-            player.y,
-            object.x,
-            object.y
-        );
+        let nearbyObject = null;
 
-        if (distance < 80) {
-            nearbyObject = object;
-        }
-    });
+        this.gravObjects.children.iterate((object) => {
+            if (!object) {
+                return;
+            }
 
-    return nearbyObject;
-}
+            const distance = Phaser.Math.Distance.Between(
+                player.x,
+                player.y,
+                object.x,
+                object.y
+            );
+
+            if (distance < 80) {
+                nearbyObject = object;
+            }
+        });
+
+        return nearbyObject;
+    }   
+
     constructor() {
         super("platformerScene");
     }
@@ -139,7 +140,7 @@ class Platformer extends Phaser.Scene {
             frame: 60
         });
 
-        this.charges.forEach(c => c.setDepth(2));
+        this.charges.forEach(c => c.setDepth(0));
 
         this.shells = this.map.createFromObjects("GravObjects", {
             name: "shell",
@@ -325,6 +326,7 @@ class Platformer extends Phaser.Scene {
 
         my.sprite.player = new Player(this, this.start.x, this.start.y, "platformer_characters", "tile_0000.png", this.cursors);
         my.sprite.player.setDepth(1);
+        my.sprite.player.create();
 
         this.physics.add.collider(my.sprite.player, this.groundLayer);
 
@@ -381,13 +383,17 @@ class Platformer extends Phaser.Scene {
         });
 
         this.physics.add.overlap(my.sprite.player, this.chargeGroup, (obj1, obj2) => {
-            if (obj2.body.visible === false) return;
+            if (obj2.body.visible === false || my.sprite.player.isDash) return;
 
             my.sprite.player.isDash = true;
             obj2.body.visible = false;
 
+            obj2.alpha = 0.5;
+
             this.time.delayedCall(5000, () => {
                 obj2.body.visible = true;
+
+                obj2.alpha = 1;
             });
         });
 
