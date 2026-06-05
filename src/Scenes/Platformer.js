@@ -162,7 +162,7 @@ class Platformer extends Phaser.Scene {
             frame: 60
         });
 
-        this.charges.forEach(c => c.setDepth(2));
+        this.charges.forEach(c => c.setDepth(0));
 
         // Now we do physics based objects
         // ===============================
@@ -357,6 +357,7 @@ class Platformer extends Phaser.Scene {
         //my.sprite.player = this.physics.add.sprite(30, 345, "platformer_characters", "tile_0000.png");
         my.sprite.player = new Player(this, this.start.x, this.start.y, "platformer_characters", "tile_0000.png", this.cursors);
         my.sprite.player.setDepth(1);
+        my.sprite.player.create(); //player create!
 
         // Enable collision handling
         this.physics.add.collider(my.sprite.player, this.groundLayer);
@@ -418,12 +419,18 @@ class Platformer extends Phaser.Scene {
         });
 
         this.physics.add.overlap(my.sprite.player, this.chargeGroup, (obj1, obj2) => {
-            if (obj2.body.visible === false) return;
+            if (obj2.body.visible === false || my.sprite.player.isDash) return;
             my.sprite.player.isDash = true;
             obj2.body.visible = false;
+            obj2.alpha = 0.5;
+
             this.time.delayedCall(5000, () => {
                 obj2.body.visible = true;
+                obj2.alpha = 1;
             });
+
+            //particles on player
+            
         });
 
         this.physics.add.overlap(my.sprite.player, this.springGroup, (obj1, obj2) => {
@@ -746,7 +753,7 @@ class Platformer extends Phaser.Scene {
 
             for (let gravObj of nearbyGravObjects) {
                 //if it can be picked up
-                if (Math.abs(gravObj.body.velocity.x) < player.releaseStrength / 2.0) {
+                if (Math.abs(gravObj.body.velocity.x) < player.releaseStrength / 2.0) { //change to magnitude????
                     //if it doesn't already glow
                     if (!this.glowingGravObjs.includes(gravObj)) {
                         gravObj.fx = gravObj.filters.internal.addGlow();

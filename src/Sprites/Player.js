@@ -34,6 +34,51 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         return this;
     }
 
+    create() {
+        this.vfx = {};
+
+        //particles for when player can dash
+        this.vfx.dashParticles = this.scene.add.particles(100, 100, 'square', {
+            scale: 0.01,
+
+            speedY: -20,
+            alpha: { start: 0.75, end: 0 },
+            quantity: 1,
+            lifespan: 1000,
+            frequency: 100,
+
+            tint: 0x74d6bf,
+            tintFill: true,
+
+            emitZone: 
+            {
+                type: 'random',
+                source: new Phaser.Geom.Rectangle(0, 0, 12, 1),
+            }  
+        }); 
+        this.vfx.dashParticles.setDepth(4);
+        this.vfx.dashParticles.stop();
+
+        this.vfx.dashBlast = this.scene.add.particles(100, 100, 'square', {
+            scale: 0.01,
+
+            speedY: {min: 10, max: 50},
+            alpha: { start: 1, end: 0 },
+            quantity: 40,
+            lifespan: 400,
+            frequency: 100,
+
+            speedX: {min: -40, max: 40},
+
+            duration: 100,
+
+            tint: 0x74d6bf,
+            tintFill: true,
+        }); 
+        this.vfx.dashBlast.setDepth(4);
+        this.vfx.dashBlast.stop();
+    }
+
     init() {
 
         this.isGrab = false;
@@ -232,7 +277,15 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         // Do dash
         // =======
 
+        if (this.isDash) {
+            this.moveDashParticles();
+        }
+        
         if (dashJustDown && this.isDash){
+            this.vfx.dashParticles.stop();
+
+            this.vfx.dashBlast.setPosition(this.x, this.y);
+            this.vfx.dashBlast.start();
 
             //console.log("IS DASHING");
             let dx = inputX;
@@ -329,5 +382,11 @@ class Player extends Phaser.Physics.Arcade.Sprite {
             this.isFlipLocked = false;
             this.spinFlipTimer = 0;
         }
+    }
+
+    moveDashParticles() {
+        this.vfx.dashParticles.setPosition(this.x - 6, this.y + 9);
+
+        this.vfx.dashParticles.start();
     }
 }
