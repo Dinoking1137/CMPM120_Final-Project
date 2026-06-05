@@ -1,33 +1,9 @@
 class Platformer extends Phaser.Scene {
-    checkForNearbyGravObjects(player) {
-        if (!this.gravObjects) {
-            return null;
-        }
-
-        let nearbyObject = null;
-
-        this.gravObjects.children.iterate((object) => {
-            if (!object) {
-                return;
-            }
-
-            const distance = Phaser.Math.Distance.Between(
-                player.x,
-                player.y,
-                object.x,
-                object.y
-            );
-
-            if (distance < 80) {
-                nearbyObject = object;
-            }
-        });
-
-        return nearbyObject;
-    }   
 
     constructor() {
         super("platformerScene");
+
+        this.glowingGravObjs = [];
     }
 
     init(data) {
@@ -151,6 +127,7 @@ class Platformer extends Phaser.Scene {
         this.shells.forEach(s => {
             s.setDepth(0);
             s.isGravObject = true;
+            s.enableFilters();
         });
 
         this.gravSprings = this.map.createFromObjects("GravObjects", {
@@ -162,6 +139,7 @@ class Platformer extends Phaser.Scene {
         this.gravSprings.forEach(g => {
             g.setDepth(0);
             g.isGravObject = true;
+            g.enableFilters();
         });
 
         this.anims.create({
@@ -286,7 +264,7 @@ class Platformer extends Phaser.Scene {
         this.gravSpringGroup = this.add.group(this.gravSprings);
 
         this.spawn = this.spawnGroup.getChildren()[0];
-        console.log(this.spawn);
+        //console.log(this.spawn);
         this.start = {
             x: this.spawn.x,
             y: this.spawn.y
@@ -301,7 +279,7 @@ class Platformer extends Phaser.Scene {
         this.cursors.jump = this.input.keyboard.addKey('SPACE');
         this.cursors.twirl = this.input.keyboard.addKey('PERIOD');
         this.cursors.dash = this.input.keyboard.addKey('COMMA');
-        this.cursors.grab = this.input.keyboard.addKey('E');
+        this.cursors.grab = this.input.keyboard.addKey('K');
         this.cursors.spin = this.input.keyboard.addKey('L');
 
         this.rKey = this.input.keyboard.addKey('R');
@@ -412,7 +390,7 @@ class Platformer extends Phaser.Scene {
         });
 
         this.physics.add.overlap(my.sprite.player, this.gravSpringGroup, (obj1, obj2) => {
-            console.log("GRAV SPRING OVERLAP WEEEWOOO WEEEHOOO");
+            //console.log("GRAV SPRING OVERLAP WEEEWOOO WEEEHOOO");
 
             if (my.sprite.player.isGrabInteractable == false) return;
             if (my.sprite.player.holdingSomething && my.sprite.player.grabbedObject == obj2) return;
@@ -485,7 +463,7 @@ class Platformer extends Phaser.Scene {
 
             } else {
                 this.deathFadeRespawn();
-                console.log("failed shell jump");
+                //console.log("failed shell jump");
             }
 
             obj2.cantCollide = true;
@@ -579,7 +557,7 @@ class Platformer extends Phaser.Scene {
         this.shells.forEach(shell => {
             if (shell.body.blocked.down && !shell.noGroundDrag) {
                 shell.body.setDragX(this.DRAG);
-                console.log("SHELL DRAG");
+                //console.log("SHELL DRAG");
             } else {
                 shell.body.setDragX(0);
             }
@@ -588,7 +566,7 @@ class Platformer extends Phaser.Scene {
         this.gravSprings.forEach(gSpring => {
             if (gSpring.body.blocked.down) {
                 gSpring.body.setDragX(this.DRAG);
-                console.log("GRAV SPRING DRAG");
+                //console.log("GRAV SPRING DRAG");
             } else {
                 gSpring.body.setDragX(0);
             }
@@ -648,5 +626,53 @@ class Platformer extends Phaser.Scene {
         layer.setScrollFactor(ratioX, ratioY);
         layer.setScale(scaleX, scaleY);
         layer.setPosition(positionX, positionY);
+    }
+
+    checkForNearbyGravObjects() { 
+        const player = my.sprite.player; //aliasing
+
+        const grabOffsetX = player.flipX ? -player.body.width / 2 : player.body.width / 2;
+        const grabX = player.x + grabOffsetX;
+        const grabY = player.y;
+        const grabRadius = 20;
+
+        const nearbyGravObjects = this.physics.overlapCirc(grabX, grabY, grabRadius, true, true)
+                .filter(body => body.gameObject !== player && body.gameObject.isGravObject)
+                .map(body => body.gameObject);
+        
+        if (nearbyGravObjects.length > 0 
+                && !player.holdingSomething) {
+            //Highlighting
+            //=========
+
+            //prune list of stuff not nearby
+            let removable = this.glowingGravObjs.filter(item => !nearbyGravObjects.includes(item));
+            for (const obj of removable) {
+                obj.filters.internal.remove(obj.fx);
+            }
+            this.glowingGravObjs = this.glowingGravObjs.filter(item => nearbyGravObjects.includes(item));
+
+            for (let gravObj of nearbyGravObjects) {
+                //if it can be picked up
+                if (Math.abs(gravObj.body.velocity.x) < player.releaseStrength / 2.0) {
+                    //if it doesn't already glow
+                    if (!this.glowingGravObjs.includes(gravObj)) {
+                        gravObj.fx = gravObj.filters.internal.addGlow();
+                        gravObj.fx.setPaddingOverride(null);
+
+                        this.glowingGravObjs.push(gravObj);
+                    }
+                }
+            } 
+        }
+        else if (this.glowingGravObjs.length > 0) {
+            for (let obj of this.glowingGravObjs) {
+                obj.filters.internal.remove(obj.fx);
+            }
+
+            this.glowingGravObjs = []
+        }
+
+        return nearbyGravObjects[0];
     }
 }
