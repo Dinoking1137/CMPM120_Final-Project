@@ -11,7 +11,7 @@ class Platformer extends Phaser.Scene {
         this.physics.world.gravity.y = 1750;
         this.physics.world.TILE_BIAS = 24;
         this.PARTICLE_VELOCITY = 50;
-        this.SCALE = 4.0;
+        this.SCALE = 3.5;
         this.TILE_SIZE = 18;
         this.canDie = true;
     }
@@ -53,12 +53,12 @@ class Platformer extends Phaser.Scene {
     create() {
         this.createParticles();
 
-        this.map = this.add.tilemap("tutorial", 16, 16, 32, 16);
-        this.final_tileset = this.map.addTilesetImage("final", "final_tilemap_tiles");
+        this.map = this.add.tilemap("test-platformer", 16, 16, 32, 16);
+        this.final_tileset = this.map.addTilesetImage("final_tilemap", "final_tilemap_tiles");
 
-        //this.bgLayer = this.map.createLayer("BackGround", [this.final_tileset], 0, 0);
+        this.bgLayer = this.map.createLayer("BackGround", [this.final_tileset], 0, 0);
         this.groundLayer = this.map.createLayer("Ground", [this.final_tileset], 0, 0);
-        // this.lavaLayer = this.map.createLayer("Lava", [this.final_tileset], 0, 0);
+        this.lavaLayer = this.map.createLayer("Lava", [this.final_tileset], 0, 0);
 
         this.groundLayer.setCollisionByExclusion([-1]);
 
@@ -69,6 +69,14 @@ class Platformer extends Phaser.Scene {
         });
 
         this.coins.forEach(c => c.setDepth(2));
+
+        this.finish = this.map.createFromObjects("Objects", {
+            name: "finish",
+            key: "final_sheet",
+            frame: 75
+        });
+
+        this.finish.forEach(c => c.setDepth(2));
 
         this.spawns = this.map.createFromObjects("Objects", {
             name: "spawn",
@@ -196,6 +204,7 @@ class Platformer extends Phaser.Scene {
         this.anims.play('chargeAnim', this.charges);
 
         this.physics.world.enable(this.coins, Phaser.Physics.Arcade.STATIC_BODY);
+        this.physics.world.enable(this.finish, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.spawns, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.spikes, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.superspikes, Phaser.Physics.Arcade.STATIC_BODY);
@@ -254,6 +263,7 @@ class Platformer extends Phaser.Scene {
         });
 
         this.coinGroup = this.add.group(this.coins);
+        this.finishGroup = this.add.group(this.finish);
         this.spawnGroup = this.add.group(this.spawns);
         this.spikeGroup = this.add.group(this.spikes);
         this.superspikeGroup = this.add.group(this.superspikes);
@@ -319,6 +329,10 @@ class Platformer extends Phaser.Scene {
         this.physics.add.overlap(my.sprite.player, this.coinGroup, (obj1, obj2) => {
             this.vfx.coin.emitParticleAt(obj2.x, obj2.y);
             obj2.destroy();
+        });
+
+        this.physics.add.overlap(my.sprite.player, this.finishGroup, (obj1, obj2) => {
+            this.scene.start('thanksScene');
         });
 
         this.physics.add.overlap(my.sprite.player, this.spawnGroup, (obj1, obj2) => {
@@ -474,7 +488,8 @@ class Platformer extends Phaser.Scene {
             });
         });
 
-        this.input.keyboard.on('keydown-CTRL', () => {
+        //development only
+        /*this.input.keyboard.on('keydown-CTRL', () => {
             this.physics.world.drawDebug = !this.physics.world.drawDebug;
 
             if (this.physics.world.debugGraphic) {
@@ -484,10 +499,10 @@ class Platformer extends Phaser.Scene {
             if (this.physics.world.drawDebug) {
                 this.physics.world.createDebugGraphic();
             }
-        }, this);
+        }, this);*/
 
-        //this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
-        this.cameras.main.startFollow(my.sprite.player, true, 0.25, 0.25);
+        this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
+        this.cameras.main.startFollow(my.sprite.player, true, 0.25, 0.25, 0, 0);
         this.cameras.main.setDeadzone(50, 50);
         this.cameras.main.setZoom(this.SCALE);
 
@@ -516,6 +531,7 @@ class Platformer extends Phaser.Scene {
     update(time, delta) {
         let dt = delta / 1000;
 
+        //controller input
         const pad = this.input.gamepad.getPad(0);
 
         if (pad) {
@@ -629,6 +645,7 @@ class Platformer extends Phaser.Scene {
         layer.setPosition(positionX, positionY);
     }
 
+    //runs every frame from player.js
     checkForNearbyGravObjects() { 
         const player = my.sprite.player; //aliasing
 

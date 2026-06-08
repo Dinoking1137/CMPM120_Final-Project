@@ -33,15 +33,15 @@
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 1.5,
-            "selectedLayer": 3,
+            "scale": 2,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 247.66666666666663,
-                "y": 119.66666666666663
+                "x": 119.75,
+                "y": 199.75
             }
         },
         "test-platformer.tmx#final_tilemap": {
-            "scaleInDock": 1,
+            "scaleInDock": 2,
             "scaleInEditor": 1
         },
         "tutorial.tmj": {
@@ -72,8 +72,8 @@
     ],
     "project": "AarTestZone.tiled-project",
     "recentFiles": [
-        "platformer-level-1.tmx",
-        "test-platformer.tmx"
+        "test-platformer.tmx",
+        "platformer-level-1.tmx"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": true,
